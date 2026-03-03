@@ -122,6 +122,8 @@
   color: #ffffff;
   box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35);
   box-sizing: border-box;
+  cursor: grab;
+  overflow: visible;
 }
 
 .task-bar span {
@@ -129,6 +131,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.84rem;
+}
+
+.task-bar:active {
+  cursor: grabbing;
 }
 
 .resize-handle {
@@ -158,6 +164,84 @@
   padding: 0;
   background: #93c5fd;
   cursor: crosshair;
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.details-dialog {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.details-dialog h2 {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+}
+
+.details-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.86rem;
+  color: #334155;
+}
+
+.details-dialog input,
+.details-dialog textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.details-dialog input[type='color'] {
+  width: 56px;
+  padding: 2px;
+  min-height: 34px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.dialog-actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 7px 10px;
+  font-size: 0.86rem;
+  color: #0f172a;
+}
+
+.dialog-actions .primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.dialog-actions .danger {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .draft-bar {
