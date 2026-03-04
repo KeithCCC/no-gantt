@@ -58,6 +58,7 @@ const LANE_HEIGHT = 24
 const BAR_HEIGHT = 24
 const HEADER_HEIGHT = 34
 const TIMELINE_DAYS = 120
+const TIMELINE_PADDING_DAYS = 14
 const DEFAULT_TASK_COLOR = '#1d4ed8'
 
 const ZOOM_PX_PER_DAY: Record<ZoomLevel, number> = {
@@ -224,6 +225,7 @@ function formatDateLabel(ts: number): string {
 function App() {
   const timelineScrollRef = useRef<HTMLDivElement | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
+  const suppressGridClickRef = useRef(false)
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [zoom, setZoom] = useState<ZoomLevel>('week')
@@ -238,13 +240,38 @@ function App() {
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null)
 
   const [defaultTimelineStart] = useState(() => startOfDayUtc(Date.now() - 7 * DAY_MS))
-  const [yearViewYear] = useState(() => new Date().getUTCFullYear())
-  const yearTimelineStart = Date.UTC(yearViewYear, 0, 1)
-  const yearTimelineEnd = Date.UTC(yearViewYear + 1, 0, 1)
+  const earliestTaskStart = useMemo(
+    () =>
+      tasks.length > 0
+        ? startOfDayUtc(tasks.reduce((min, task) => Math.min(min, task.start), Number.POSITIVE_INFINITY))
+        : defaultTimelineStart,
+    [tasks, defaultTimelineStart],
+  )
+  const latestTaskEnd = useMemo(
+    () =>
+      tasks.length > 0
+        ? startOfDayUtc(tasks.reduce((max, task) => Math.max(max, task.end), Number.NEGATIVE_INFINITY))
+        : defaultTimelineStart + TIMELINE_DAYS * DAY_MS,
+    [tasks, defaultTimelineStart],
+  )
+
+  const nonYearTimelineStart = Math.min(
+    defaultTimelineStart,
+    earliestTaskStart - TIMELINE_PADDING_DAYS * DAY_MS,
+  )
+  const nonYearTimelineDays = Math.max(
+    TIMELINE_DAYS,
+    Math.ceil((latestTaskEnd - nonYearTimelineStart) / DAY_MS) + TIMELINE_PADDING_DAYS,
+  )
+
+  const earliestTaskYear = new Date(earliestTaskStart).getUTCFullYear()
+  const latestTaskYear = new Date(latestTaskEnd).getUTCFullYear()
+  const yearTimelineStart = Date.UTC(earliestTaskYear, 0, 1)
+  const yearTimelineEnd = Date.UTC(latestTaskYear + 1, 0, 1)
   const yearTimelineDays = Math.round((yearTimelineEnd - yearTimelineStart) / DAY_MS)
 
-  const timelineStart = zoom === 'year' ? yearTimelineStart : defaultTimelineStart
-  const timelineDays = zoom === 'year' ? yearTimelineDays : TIMELINE_DAYS
+  const timelineStart = zoom === 'year' ? yearTimelineStart : nonYearTimelineStart
+  const timelineDays = zoom === 'year' ? yearTimelineDays : nonYearTimelineDays
   const pxPerDay =
     zoom === 'year'
       ? Math.max(1, (yearViewWidth || 960) / yearTimelineDays)
@@ -365,6 +392,7 @@ function App() {
     }
 
     const onMouseUp = () => {
+      const hadPointerInteraction = Boolean(dragDraft || resizeDraft || linkDraft)
       if (dragDraft) {
         setTasks((prev) => settleDraggedTask(prev, dragDraft.taskId))
       }
@@ -372,6 +400,10 @@ function App() {
       setResizeDraft(null)
       setLinkDraft(null)
       setDragDraft(null)
+
+      if (hadPointerInteraction) {
+        suppressGridClickRef.current = true
+      }
     }
 
     window.addEventListener('mousemove', onMouseMove)
@@ -392,6 +424,11 @@ function App() {
   ])
 
   const onGridClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (suppressGridClickRef.current) {
+      suppressGridClickRef.current = false
+      return
+    }
+
     const target = event.target as HTMLElement
     if (target.closest('.task-bar')) return
     const bounds = event.currentTarget.getBoundingClientRect()
