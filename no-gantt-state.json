@@ -82,36 +82,6 @@
       "dependencies": [],
       "color": "#1d4ed8",
       "description": ""
-    },
-    {
-      "id": "3c9d8883-84b4-403e-b990-7702e3ea837e",
-      "name": "Task 2",
-      "start": 1773222000000,
-      "end": 1773243600000,
-      "lane": 0,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": ""
-    },
-    {
-      "id": "9a920917-0689-4e41-8f1a-6fa858addfd8",
-      "name": "Task 1",
-      "start": 1773226800000,
-      "end": 1773248400000,
-      "lane": 1,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": ""
-    },
-    {
-      "id": "ab05a08c-12e7-4c6d-a3aa-bf6ae1bf97e2",
-      "name": "Task 3",
-      "start": 1773475200000,
-      "end": 1773496800000,
-      "lane": 0,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": ""
     }
   ],
   "zoom": "day"

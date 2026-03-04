@@ -10,9 +10,10 @@ type Task = {
   dependencies: string[]
   color: string
   description: string
+  done: boolean
 }
 
-type ZoomLevel = 'day' | 'week' | 'month'
+type ZoomLevel = 'day' | 'week' | 'month' | 'year'
 
 type AppState = {
   tasks: Task[]
@@ -41,6 +42,9 @@ type TaskEditor = {
   name: string
   color: string
   description: string
+  startDate: string
+  endDate: string
+  done: boolean
 }
 
 type PendingCreate = {
@@ -50,8 +54,8 @@ type PendingCreate = {
 
 const DAY_MS = 86_400_000
 const MIN_TASK_MS = 6 * 60 * 60 * 1000
-const LANE_HEIGHT = 54
-const BAR_HEIGHT = 32
+const LANE_HEIGHT = 24
+const BAR_HEIGHT = 24
 const HEADER_HEIGHT = 34
 const TIMELINE_DAYS = 120
 const DEFAULT_TASK_COLOR = '#1d4ed8'
@@ -60,12 +64,14 @@ const ZOOM_PX_PER_DAY: Record<ZoomLevel, number> = {
   day: 72,
   week: 24,
   month: 8,
+  year: 1,
 }
 
 const DB_NAME = 'no-gantt-mvp'
 const DB_VERSION = 1
 const STORE_NAME = 'kv'
 const STATE_KEY = 'app-state'
+const PRESET_TASK_COLORS = ['#1d4ed8', '#0f766e', '#b45309', '#be123c', '#4338ca']
 
 function startOfDayUtc(ts: number): number {
   const d = new Date(ts)
@@ -104,17 +110,19 @@ function buildTaskName(tasks: Task[]): string {
 }
 
 function normalizeTask(
-  task: Omit<Task, 'color' | 'description'> & Partial<Pick<Task, 'color' | 'description'>>,
+  task: Omit<Task, 'color' | 'description' | 'done'> &
+    Partial<Pick<Task, 'color' | 'description' | 'done'>>,
 ): Task {
   return {
     ...task,
     color: task.color ?? DEFAULT_TASK_COLOR,
     description: task.description ?? '',
+    done: task.done ?? false,
   }
 }
 
 function isZoomLevel(value: unknown): value is ZoomLevel {
-  return value === 'day' || value === 'week' || value === 'month'
+  return value === 'day' || value === 'week' || value === 'month' || value === 'year'
 }
 
 function parseImportedState(raw: unknown): AppState | null {
@@ -147,6 +155,7 @@ function parseImportedState(raw: unknown): AppState | null {
         dependencies: task.dependencies,
         color: task.color,
         description: task.description,
+        done: task.done,
       }),
     )
   }
@@ -193,23 +202,54 @@ async function loadState(): Promise<AppState | null> {
   return result
 }
 
+function toDateInputValue(ts: number): string {
+  const d = new Date(ts)
+  const year = d.getUTCFullYear()
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function fromDateInputValue(value: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return null
+  return Date.UTC(year, month - 1, day)
+}
+
+function formatDateLabel(ts: number): string {
+  return toDateInputValue(ts)
+}
+
 function App() {
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
-  const hoverTimerRef = useRef<number | null>(null)
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [zoom, setZoom] = useState<ZoomLevel>('week')
   const [loaded, setLoaded] = useState(false)
+  const [yearViewWidth, setYearViewWidth] = useState(0)
 
   const [resizeDraft, setResizeDraft] = useState<ResizeDraft | null>(null)
   const [linkDraft, setLinkDraft] = useState<LinkDraft | null>(null)
   const [dragDraft, setDragDraft] = useState<DragDraft | null>(null)
   const [editor, setEditor] = useState<TaskEditor | null>(null)
   const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(null)
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null)
 
-  const [timelineStart] = useState(() => startOfDayUtc(Date.now() - 7 * DAY_MS))
-  const pxPerDay = ZOOM_PX_PER_DAY[zoom]
-  const timelineWidth = TIMELINE_DAYS * pxPerDay
+  const [defaultTimelineStart] = useState(() => startOfDayUtc(Date.now() - 7 * DAY_MS))
+  const [yearViewYear] = useState(() => new Date().getUTCFullYear())
+  const yearTimelineStart = Date.UTC(yearViewYear, 0, 1)
+  const yearTimelineEnd = Date.UTC(yearViewYear + 1, 0, 1)
+  const yearTimelineDays = Math.round((yearTimelineEnd - yearTimelineStart) / DAY_MS)
+
+  const timelineStart = zoom === 'year' ? yearTimelineStart : defaultTimelineStart
+  const timelineDays = zoom === 'year' ? yearTimelineDays : TIMELINE_DAYS
+  const pxPerDay =
+    zoom === 'year'
+      ? Math.max(1, (yearViewWidth || 960) / yearTimelineDays)
+      : ZOOM_PX_PER_DAY[zoom]
+  const timelineWidth = timelineDays * pxPerDay
 
   const laneCount = useMemo(
     () => Math.max(1, tasks.reduce((maxLane, task) => Math.max(maxLane, task.lane + 1), 1)),
@@ -226,6 +266,19 @@ function App() {
     (x: number) => timelineStart + (x / pxPerDay) * DAY_MS,
     [timelineStart, pxPerDay],
   )
+
+  useEffect(() => {
+    const element = timelineScrollRef.current
+    if (!element) return
+
+    const updateWidth = () => setYearViewWidth(element.clientWidth)
+    updateWidth()
+
+    const observer = new ResizeObserver(() => updateWidth())
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -250,29 +303,17 @@ function App() {
     void saveState({ tasks, zoom })
   }, [tasks, zoom, loaded])
 
-  const clearHoverTimer = useCallback(() => {
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current)
-      hoverTimerRef.current = null
-    }
+  const openTaskEditor = useCallback((task: Task) => {
+    setEditor({
+      id: task.id,
+      name: task.name,
+      color: task.color,
+      description: task.description,
+      startDate: toDateInputValue(task.start),
+      endDate: toDateInputValue(task.end - 1),
+      done: task.done,
+    })
   }, [])
-
-  const scheduleHoverEditor = useCallback(
-    (task: Task) => {
-      clearHoverTimer()
-      hoverTimerRef.current = window.setTimeout(() => {
-        setEditor({
-          id: task.id,
-          name: task.name,
-          color: task.color,
-          description: task.description,
-        })
-      }, 1000)
-    },
-    [clearHoverTimer],
-  )
-
-  useEffect(() => () => clearHoverTimer(), [clearHoverTimer])
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
@@ -331,7 +372,6 @@ function App() {
       setResizeDraft(null)
       setLinkDraft(null)
       setDragDraft(null)
-      clearHoverTimer()
     }
 
     window.addEventListener('mousemove', onMouseMove)
@@ -349,7 +389,6 @@ function App() {
     renderLaneCount,
     timelineStart,
     toTime,
-    clearHoverTimer,
   ])
 
   const onGridClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -375,6 +414,7 @@ function App() {
       dependencies: [],
       color: DEFAULT_TASK_COLOR,
       description: '',
+      done: false,
     }
 
     setTasks((prev) => {
@@ -450,14 +490,21 @@ function App() {
 
   const ticks = useMemo(() => {
     const result: Array<{ x: number; label: string }> = []
-    for (let i = 0; i <= TIMELINE_DAYS; i += 1) {
+    for (let i = 0; i <= timelineDays; i += 1) {
       const ts = timelineStart + i * DAY_MS
       const d = new Date(ts)
 
       const day = d.getUTCDate()
       const month = d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })
 
-      if (zoom === 'day') {
+      if (zoom === 'year') {
+        if (day === 1) {
+          result.push({
+            x: i * pxPerDay,
+            label: `${month}${d.getUTCMonth() === 0 ? ` ${d.getUTCFullYear()}` : ''}`,
+          })
+        }
+      } else if (zoom === 'day') {
         result.push({ x: i * pxPerDay, label: `${month} ${day}` })
       } else if (zoom === 'week' && i % 7 === 0) {
         result.push({ x: i * pxPerDay, label: `${month} ${day}` })
@@ -466,7 +513,14 @@ function App() {
       }
     }
     return result
-  }, [zoom, pxPerDay, timelineStart])
+  }, [zoom, pxPerDay, timelineStart, timelineDays])
+
+  const todayX = useMemo(() => toX(startOfDayUtc(Date.now())), [toX])
+  const showTodayLine = todayX >= 0 && todayX <= timelineWidth
+  const hoveredTask = useMemo(
+    () => tasks.find((task) => task.id === hoveredTaskId) ?? null,
+    [tasks, hoveredTaskId],
+  )
 
   return (
     <div className="app-shell">
@@ -482,6 +536,9 @@ function App() {
           <button className={zoom === 'month' ? 'active' : ''} onClick={() => setZoom('month')}>
             Month
           </button>
+          <button className={zoom === 'year' ? 'active' : ''} onClick={() => setZoom('year')}>
+            Year
+          </button>
           <button onClick={() => importInputRef.current?.click()}>Import JSON</button>
           <button onClick={exportJson}>Export JSON</button>
           <input
@@ -494,13 +551,14 @@ function App() {
         </div>
       </header>
 
-      <div className="timeline-scroll">
+      <div className="timeline-scroll" ref={timelineScrollRef}>
         <div
           className="timeline"
           ref={timelineRef}
           onClick={onGridClick}
           style={{ width: `${timelineWidth}px`, height: `${HEADER_HEIGHT + timelineHeight}px` }}
         >
+          {showTodayLine && <div className="today-line" style={{ left: `${todayX}px` }} />}
           <div className="timeline-header" style={{ height: `${HEADER_HEIGHT}px` }}>
             {ticks.map((tick) => (
               <div key={`${tick.x}-${tick.label}`} className="tick" style={{ left: `${tick.x}px` }}>
@@ -546,9 +604,9 @@ function App() {
                 if (!target) return null
 
                 const x1 = toX(task.end)
-                const y1 = task.lane * LANE_HEIGHT + BAR_HEIGHT / 2 + 10
+                const y1 = task.lane * LANE_HEIGHT + BAR_HEIGHT / 2
                 const x2 = toX(target.start)
-                const y2 = target.lane * LANE_HEIGHT + BAR_HEIGHT / 2 + 10
+                const y2 = target.lane * LANE_HEIGHT + BAR_HEIGHT / 2
                 const bend = Math.max(20, Math.abs(x2 - x1) / 2)
                 const d = `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`
 
@@ -559,7 +617,7 @@ function App() {
               const source = tasks.find((task) => task.id === linkDraft.sourceTaskId)
               if (!source) return null
               const x1 = toX(source.end)
-              const y1 = source.lane * LANE_HEIGHT + BAR_HEIGHT / 2 + 10
+              const y1 = source.lane * LANE_HEIGHT + BAR_HEIGHT / 2
               return (
                 <line
                   x1={x1}
@@ -576,12 +634,12 @@ function App() {
             {tasks.map((task) => {
               const left = toX(task.start)
               const width = Math.max(8, toX(task.end) - toX(task.start))
-              const top = task.lane * LANE_HEIGHT + 8
+              const top = task.lane * LANE_HEIGHT
 
               return (
                 <div
                   key={task.id}
-                  className="task-bar"
+                  className={`task-bar ${task.done ? 'done' : ''}`}
                   style={{
                     left: `${left}px`,
                     top: `${top}px`,
@@ -596,29 +654,21 @@ function App() {
                     const bounds = timelineRef.current?.getBoundingClientRect()
                     if (!bounds) return
                     event.stopPropagation()
-                    clearHoverTimer()
                     setDragDraft({
                       taskId: task.id,
                       pointerOffsetX: event.clientX - bounds.left - left,
                       pointerOffsetY: event.clientY - bounds.top - HEADER_HEIGHT - top,
                     })
                   }}
-                  onMouseEnter={(event) => {
+                  onMouseEnter={() => {
                     if (resizeDraft || dragDraft || linkDraft) return
-                    const target = event.target as HTMLElement
-                    if (target.closest('button')) return
-                    scheduleHoverEditor(task)
+                    setHoveredTaskId(task.id)
                   }}
-                  onMouseMove={(event) => {
+                  onMouseMove={() => {
                     if (resizeDraft || dragDraft || linkDraft) return
-                    const target = event.target as HTMLElement
-                    if (target.closest('button')) {
-                      clearHoverTimer()
-                      return
-                    }
-                    scheduleHoverEditor(task)
+                    setHoveredTaskId(task.id)
                   }}
-                  onMouseLeave={clearHoverTimer}
+                  onMouseLeave={() => setHoveredTaskId((prev) => (prev === task.id ? null : prev))}
                   onMouseUp={() => {
                     if (linkDraft) updateDependency(linkDraft.sourceTaskId, task.id)
                   }}
@@ -646,6 +696,17 @@ function App() {
                     aria-label={`Link from ${task.name}`}
                   />
                   <button
+                    className="detail-handle"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openTaskEditor(task)
+                    }}
+                    aria-label={`Open details for ${task.name}`}
+                    title="Task details"
+                  >
+                    i
+                  </button>
+                  <button
                     className="resize-handle right"
                     onMouseDown={(event) => {
                       event.stopPropagation()
@@ -660,9 +721,27 @@ function App() {
         </div>
       </div>
 
+      <div className="hover-info">
+        {hoveredTask ? (
+          <>
+            <strong>{hoveredTask.name}</strong>
+            <span>Status: {hoveredTask.done ? 'Done' : 'Active'}</span>
+            <span>Start: {formatDateLabel(hoveredTask.start)}</span>
+            <span>End: {formatDateLabel(hoveredTask.end - 1)}</span>
+          </>
+        ) : (
+          <>
+            <strong>No task hovered</strong>
+            <span>Status: -</span>
+            <span>Start: -</span>
+            <span>End: -</span>
+          </>
+        )}
+      </div>
+
       <p className="note">
         POC controls: click blank lane space to create (with confirmation), drag bar body to move lane/time, drag bar
-        edges to resize, drag the middle dot to another bar to create a dependency, hover a task for 1 second to open
+        edges to resize, drag the middle dot to another bar to create a dependency, click the `i` icon to open task
         details.
       </p>
 
@@ -686,6 +765,26 @@ function App() {
           <div className="details-dialog" onMouseDown={(event) => event.stopPropagation()}>
             <h2>Task Details</h2>
             <label>
+              <span>Start</span>
+              <input
+                type="date"
+                value={editor.startDate}
+                onChange={(event) =>
+                  setEditor((prev) => (prev ? { ...prev, startDate: event.target.value } : prev))
+                }
+              />
+            </label>
+            <label>
+              <span>End</span>
+              <input
+                type="date"
+                value={editor.endDate}
+                onChange={(event) =>
+                  setEditor((prev) => (prev ? { ...prev, endDate: event.target.value } : prev))
+                }
+              />
+            </label>
+            <label>
               <span>Name</span>
               <input
                 value={editor.name}
@@ -703,6 +802,19 @@ function App() {
                   setEditor((prev) => (prev ? { ...prev, color: event.target.value } : prev))
                 }
               />
+              <div className="color-presets">
+                {PRESET_TASK_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`color-swatch ${editor.color.toLowerCase() === color ? 'selected' : ''}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setEditor((prev) => (prev ? { ...prev, color } : prev))}
+                    aria-label={`Select color ${color}`}
+                    title={color}
+                  />
+                ))}
+              </div>
             </label>
             <label>
               <span>Description</span>
@@ -715,6 +827,16 @@ function App() {
               />
             </label>
             <div className="dialog-actions">
+              <button
+                className={editor.done ? 'neutral' : 'success'}
+                onClick={() => {
+                  const nextDone = !editor.done
+                  updateTask(editor.id, { done: nextDone })
+                  setEditor((prev) => (prev ? { ...prev, done: nextDone } : prev))
+                }}
+              >
+                {editor.done ? 'Undo Done' : 'Done'}
+              </button>
               <button className="danger" onClick={() => deleteTask(editor.id)}>
                 Delete
               </button>
@@ -722,10 +844,26 @@ function App() {
               <button
                 className="primary"
                 onClick={() => {
+                  const startTs = fromDateInputValue(editor.startDate)
+                  const endTs = fromDateInputValue(editor.endDate)
+                  if (startTs === null || endTs === null) {
+                    window.alert('Please enter valid Start and End dates.')
+                    return
+                  }
+
+                  const nextEnd = endTs + DAY_MS
+                  if (startTs >= nextEnd) {
+                    window.alert('End date must be on or after Start date.')
+                    return
+                  }
+
                   updateTask(editor.id, {
                     name: editor.name.trim() || 'Untitled Task',
                     color: editor.color,
                     description: editor.description,
+                    start: startTs,
+                    end: nextEnd,
+                    done: editor.done,
                   })
                   setEditor(null)
                 }}
