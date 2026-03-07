@@ -10,7 +10,9 @@ setup ceremony.
 MVP scope: - Drag to create task bars - Auto-generated task names (Task
 1, Task 2...) - Drag to resize start/end - Arrow to create
 dependencies - Zoom levels (Day / Week / Month) - Auto lane stacking (no
-overlap) - Local persistence (IndexedDB) - JSON export
+overlap) - Local persistence (IndexedDB) - JSON export - Export to a
+popular WBS spreadsheet format that can be edited as an Excel project
+Gantt chart - Export template presets and export customization options
 
 ------------------------------------------------------------------------
 
@@ -108,13 +110,26 @@ Pixel-to-time scale - Header rendering
 -   Auto-save on state change
 -   JSON Export:
     -   Download full AppState as .json file
+-   WBS Spreadsheet Export (Excel-compatible):
+    -   Export tasks into a common WBS tabular format (`.xlsx` or `.csv`)
+    -   Include columns for WBS ID, Task Name, Start, End, Duration,
+        Dependencies, and Lane
+    -   Output should open directly in Excel and be usable for Gantt
+        editing/adjustment
+-   Export Templates / Customization:
+    -   Preset templates (e.g., Basic WBS, Detailed WBS)
+    -   User-selectable export options:
+        -   Date format
+        -   Included columns
+        -   Dependency representation style
+    -   Persist last-used export option locally
 
 ------------------------------------------------------------------------
 
 ## 5. UI Structure
 
     App
-     ├─ Toolbar (Zoom controls, Export button)
+     ├─ Toolbar (Zoom controls, Export button, Export template/options)
      └─ Timeline
          ├─ Header (Time scale)
          ├─ Grid
@@ -147,4 +162,5 @@ on drag
 Ko should: 1. Scaffold Vite + React + TS project 2. Implement timeline
 canvas 3. Implement drag-to-create 4. Implement auto lane stacking 5.
 Implement zoom 6. Implement IndexedDB persistence 7. Implement JSON
-export
+export 8. Implement Excel-compatible WBS export (`.xlsx` or `.csv`) 9.
+Implement export templates and customization UI/options

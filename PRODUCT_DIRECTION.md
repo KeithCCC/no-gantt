@@ -1,29 +1,29 @@
-# Product Direction
+# プロダクトの方向性
 
-## Core Direction
-NoGantt is a white-canvas planning tool in the shape of a Gantt chart.
+## コア方針
+NoGantt は、ガントチャートの形をしたホワイトキャンバス型のプランニングツールです。
 
-It is designed for low-stress project planning, where users can quickly sketch ideas first and structure them second.
+まずアイデアを素早く描き、次に構造化する、ストレスの少ないプロジェクト計画のために設計されています。
 
-## Vision
-Start from a blank WBS, brainstorm freely, and turn ideas into a project-ready foundation in minutes.
+## ビジョン
+空の WBS から始めて自由に発想し、数分でアイデアをプロジェクト実行可能な土台へ変換します。
 
-## Users
-- Individual users planning their own projects
-- Small teams casually brainstorming timelines together
+## ユーザー
+- 自分のプロジェクトを計画する個人ユーザー
+- タイムラインを気軽に共同でブレインストーミングする小規模チーム
 
-## Product Intent
-Users should be able to:
-- Freely draw a new timeline for any project
-- Add and shape core elements such as tasks and milestones
-- Add properties to each Gantt bar to progressively organize the board
-- Start planning without setup friction or rigid workflows
+## プロダクトの意図
+ユーザーは以下を行えるべきです。
+- どのプロジェクトでも新しいタイムラインを自由に描ける
+- タスクやマイルストーンなどの中核要素を追加し、形作れる
+- 各ガントバーにプロパティを追加し、ボードを段階的に整理できる
+- セットアップの手間や硬直したワークフローなしで計画を始められる
 
-## Experience Principles
-- Fast input first: adding project elements should feel effortless
-- Visual organization second: users can arrange work into a clear timeline view
-- Progressive detail: users can add more attributes and context as needed
-- Flexible canvas: supports rough brainstorming and clearer structured planning in the same space
+## 体験原則
+- まず高速入力: プロジェクト要素の追加は手間なく行えるべき
+- 次に視覚的整理: 作業を明確なタイムライン表示へ配置できる
+- 段階的な詳細化: 必要に応じて属性や文脈を追加できる
+- 柔軟なキャンバス: ラフなブレストと、より構造化された計画の両方を同じ空間で支援する
 
-## Outcome
-The app should help users move from informal idea capture to a visually organized project timeline, while preserving flexibility and low cognitive load.
+## 目指す成果
+アプリは、柔軟性と低い認知負荷を保ちながら、ユーザーが非公式なアイデア収集から視覚的に整理されたプロジェクトタイムラインへ移行できるよう支援するべきです。

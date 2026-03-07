@@ -1,0 +1,88 @@
+{
+  "tasks": [
+    {
+      "id": "06ebbcde-054e-4606-a702-4b2ac428e3d6",
+      "name": "Task 18",
+      "start": 1772157600000,
+      "end": 1772538000000,
+      "lane": 1,
+      "dependencies": [
+        "6455a483-a116-4c0c-8d16-d6563a91e125",
+        "f78f7f8f-6f23-47bc-b43f-026288a045ce"
+      ],
+      "color": "#1dd7b2",
+      "description": ""
+    },
+    {
+      "id": "48d5b265-1f02-4701-b368-d9903c5c6c6a",
+      "name": "Task 15",
+      "start": 1772257200000,
+      "end": 1772523600000,
+      "lane": 0,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "82614306-aa53-4094-a0c4-a39887cfa350",
+      "name": "Task 13",
+      "start": 1772560800000,
+      "end": 1772647200000,
+      "lane": 4,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "fb19f028-8817-4f2b-ab0d-903d26f4a3e8",
+      "name": "Task 10",
+      "start": 1772623200000,
+      "end": 1772709600000,
+      "lane": 2,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "f78f7f8f-6f23-47bc-b43f-026288a045ce",
+      "name": "Task 5",
+      "start": 1772625600000,
+      "end": 1772755200000,
+      "lane": 3,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "1971f46d-3b1a-4904-bbd2-cbb69885b34a",
+      "name": "Task 11",
+      "start": 1772644800000,
+      "end": 1772739600000,
+      "lane": 0,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "6455a483-a116-4c0c-8d16-d6563a91e125",
+      "name": "Task 19",
+      "start": 1772653200000,
+      "end": 1772791200000,
+      "lane": 1,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    },
+    {
+      "id": "c4305d19-d02d-4cd7-b151-e3fe2faf6464",
+      "name": "Task 21",
+      "start": 1772746800000,
+      "end": 1772961600000,
+      "lane": 0,
+      "dependencies": [],
+      "color": "#1d4ed8",
+      "description": ""
+    }
+  ],
+  "zoom": "day"
+}
