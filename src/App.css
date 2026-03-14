@@ -28,6 +28,7 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .toolbar button {
@@ -44,12 +45,62 @@
   background: #dbeafe;
 }
 
+.project-filter {
+  position: relative;
+}
+
+.project-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  z-index: 60;
+}
+
+.project-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 0.86rem;
+  color: #334155;
+}
+
 .timeline-scroll {
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   overflow: auto;
   background: #ffffff;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+  scrollbar-width: auto;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+  width: 32px;
+  height: 32px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+  border: 6px solid #e2e8f0;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 .hover-info {
@@ -67,6 +118,78 @@
 
 .hover-info strong {
   color: #0f172a;
+}
+
+.task-table-panel {
+  margin-top: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+}
+
+.task-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.task-table-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.task-table-header span {
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.task-table-scroll {
+  overflow: auto;
+}
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.task-table th,
+.task-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.task-table th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+}
+
+.task-table td input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 0.86rem;
+  box-sizing: border-box;
+}
+
+.task-table td input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.task-table td input[type='color'] {
+  width: 44px;
+  min-width: 44px;
+  padding: 2px;
 }
 
 .timeline {
@@ -155,6 +278,10 @@
   overflow: visible;
 }
 
+.task-bar.compact {
+  min-width: 28px;
+}
+
 .task-bar.done {
   filter: saturate(0.65);
 }
@@ -179,11 +306,49 @@
   transform: rotate(-10deg);
 }
 
-.task-bar span {
+.task-label {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.84rem;
+}
+
+.task-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-controls.floating {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  transform: none;
+  margin-left: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  z-index: 5;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.task-controls.floating.floating-below {
+  top: 100%;
+  bottom: auto;
+}
+
+.task-bar:hover .task-controls.floating,
+.task-bar:focus-within .task-controls.floating,
+.task-controls.floating:hover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .task-bar:active {
@@ -205,7 +370,7 @@
 }
 
 .resize-handle.right {
-  margin-left: 6px;
+  margin-left: 2px;
 }
 
 .link-handle {
@@ -291,6 +456,27 @@
   display: flex;
   gap: 8px;
   margin-top: 4px;
+}
+
+.project-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.project-chip {
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.project-chip:hover {
+  background: #dbeafe;
 }
 
 .color-swatch {

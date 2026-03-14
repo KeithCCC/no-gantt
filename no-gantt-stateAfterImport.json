@@ -1,258 +1,327 @@
 {
-  "tasks": [
-    {
-      "id": "wbs2026-001",
-      "name": "HR FAQ（EpicAI)",
-      "start": 1767571200000,
-      "end": 1771027200000,
-      "lane": 0,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": "Section: 陳; Source: wbs2026.md; Duration: 40d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-002",
-      "name": "IT rulebook",
-      "start": 1768435200000,
-      "end": 1773619200000,
-      "lane": 1,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": "Section: 陳; Source: wbs2026.md; Duration: 60d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-003",
-      "name": "Xpoint Cloud API連携",
-      "start": 1790812800000,
-      "end": 1795996800000,
-      "lane": 2,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": "Section: 陳; Source: wbs2026.md; Duration: 60d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-004",
-      "name": "Intersafe CAT Migration",
-      "start": 1772323200000,
-      "end": 1775779200000,
-      "lane": 3,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": "Section: 陳; Source: wbs2026.md; Duration: 40d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-005",
-      "name": "FCI環境整備",
-      "start": 1777896554969.574,
-      "end": 1785672554969.574,
-      "lane": 4,
-      "dependencies": [],
-      "color": "#1d4ed8",
-      "description": "Section: 陳; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-006",
-      "name": "ファイルサーバ整備",
-      "start": 1767225600000,
-      "end": 1775001600000,
-      "lane": 5,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-007",
-      "name": "支払い管理 sharepointサイトでの運用検討",
-      "start": 1769904000000,
-      "end": 1777680000000,
-      "lane": 6,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-008",
-      "name": "ADサーバ connectorモジュールversion up",
-      "start": 1775001600000,
-      "end": 1780185600000,
-      "lane": 7,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 60d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-009",
-      "name": "六本木本社サーバールーム設置のUPS老朽化対応",
-      "start": 1780272000000,
-      "end": 1785456000000,
-      "lane": 8,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 60d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-010",
-      "name": "WindowsServer 2016 EOL",
-      "start": 1782864000000,
-      "end": 1790640000000,
-      "lane": 9,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-011",
-      "name": "勘定奉行サーバのSQLサーバの契約更新",
-      "start": 1785542400000,
-      "end": 1793318400000,
-      "lane": 10,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-012",
-      "name": "ISO-27001 更新",
-      "start": 1788220800000,
-      "end": 1795996800000,
-      "lane": 11,
-      "dependencies": [],
-      "color": "#0f766e",
-      "description": "Section: 安藤; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-013",
-      "name": "業務改革チーム（D365改修プロジェクト）",
-      "start": 1767571200000,
-      "end": 1775347200000,
-      "lane": 12,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-014",
-      "name": "Xpoint Cloudフォーム改修",
-      "start": 1775001600000,
-      "end": 1787961600000,
-      "lane": 13,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 150d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-015",
-      "name": "Xpoint Cloud 移行",
-      "start": 1788220800000,
-      "end": 1795996800000,
-      "lane": 14,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 90d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-016",
-      "name": "PCリプレース（2026年レンタル期限満了分）",
-      "start": 1775001600000,
-      "end": 1785329169638.9094,
-      "lane": 15,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 130d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-017",
-      "name": "2/1組織変更",
-      "start": 1768348800000,
-      "end": 1770940800000,
-      "lane": 16,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 30d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-018",
-      "name": "M365リセラー変更",
-      "start": 1767571200000,
-      "end": 1777939200000,
-      "lane": 17,
-      "dependencies": [],
-      "color": "#b45309",
-      "description": "Section: 藤田; Source: wbs2026.md; Duration: 120d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-019",
-      "name": "HR マスターシステム導入",
-      "start": 1767571200000,
-      "end": 1777939200000,
-      "lane": 18,
-      "dependencies": [],
-      "color": "#be123c",
-      "description": "Section: 共通; Source: wbs2026.md; Duration: 120d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-020",
-      "name": "IT 棚卸 デバイス",
-      "start": 1771200000000,
-      "end": 1772928000000,
-      "lane": 19,
-      "dependencies": [],
-      "color": "#be123c",
-      "description": "Section: 共通; Source: wbs2026.md; Duration: 20d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-021",
-      "name": "IT 棚卸 Software",
-      "start": 1773619200000,
-      "end": 1775347200000,
-      "lane": 20,
-      "dependencies": [],
-      "color": "#be123c",
-      "description": "Section: 共通; Source: wbs2026.md; Duration: 20d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-022",
-      "name": "IT 棚卸 外注",
-      "start": 1776284356626.5059,
-      "end": 1778012356626.5059,
-      "lane": 21,
-      "dependencies": [],
-      "color": "#be123c",
-      "description": "Section: 共通; Source: wbs2026.md; Duration: 20d",
-      "done": false
-    },
-    {
-      "id": "wbs2026-023",
-      "name": "IT Azure VPN 移行",
-      "start": 1792022400000,
-      "end": 1797206400000,
-      "lane": 22,
-      "dependencies": [],
-      "color": "#be123c",
-      "description": "Section: 共通; Source: wbs2026.md; Duration: 60d",
-      "done": false
-    }
-  ],
-  "zoom": "year"
+    "tasks":  [
+                  {
+                      "id":  "wbs2026-001",
+                      "name":  "HR FAQ（EpicAI)",
+                      "start":  1767571200000,
+                      "end":  1771027200000,
+                      "lane":  0,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#1d4ed8",
+                      "description":  "Section: 陳; Source: wbs2026.md; Duration: 40d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-002",
+                      "name":  "IT rulebook",
+                      "start":  1768435200000,
+                      "end":  1773619200000,
+                      "lane":  1,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#1d4ed8",
+                      "description":  "Section: 陳; Source: wbs2026.md; Duration: 60d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-003",
+                      "name":  "Xpoint Cloud API連携",
+                      "start":  1790812800000,
+                      "end":  1795996800000,
+                      "lane":  2,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#1d4ed8",
+                      "description":  "Section: 陳; Source: wbs2026.md; Duration: 60d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-004",
+                      "name":  "Intersafe CAT Migration",
+                      "start":  1772323200000,
+                      "end":  1775779200000,
+                      "lane":  3,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#1d4ed8",
+                      "description":  "Section: 陳; Source: wbs2026.md; Duration: 40d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-005",
+                      "name":  "FCI環境整備",
+                      "start":  1777896554969.574,
+                      "end":  1785672554969.574,
+                      "lane":  4,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#1d4ed8",
+                      "description":  "Section: 陳; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-006",
+                      "name":  "ファイルサーバ整備",
+                      "start":  1767225600000,
+                      "end":  1775001600000,
+                      "lane":  5,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-007",
+                      "name":  "支払い管理 sharepointサイトでの運用検討",
+                      "start":  1769904000000,
+                      "end":  1777680000000,
+                      "lane":  6,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-008",
+                      "name":  "ADサーバ connectorモジュールversion up",
+                      "start":  1775001600000,
+                      "end":  1780185600000,
+                      "lane":  7,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 60d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-009",
+                      "name":  "六本木本社サーバールーム設置のUPS老朽化対応",
+                      "start":  1780272000000,
+                      "end":  1785456000000,
+                      "lane":  8,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 60d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-010",
+                      "name":  "WindowsServer 2016 EOL",
+                      "start":  1782864000000,
+                      "end":  1790640000000,
+                      "lane":  9,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-011",
+                      "name":  "勘定奉行サーバのSQLサーバの契約更新",
+                      "start":  1785542400000,
+                      "end":  1793318400000,
+                      "lane":  10,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-012",
+                      "name":  "ISO-27001 更新",
+                      "start":  1788220800000,
+                      "end":  1795996800000,
+                      "lane":  11,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#0f766e",
+                      "description":  "Section: 安藤; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-013",
+                      "name":  "業務改革チーム（D365改修プロジェクト）",
+                      "start":  1767571200000,
+                      "end":  1775347200000,
+                      "lane":  12,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-014",
+                      "name":  "Xpoint Cloudフォーム改修",
+                      "start":  1775001600000,
+                      "end":  1787961600000,
+                      "lane":  13,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 150d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-015",
+                      "name":  "Xpoint Cloud 移行",
+                      "start":  1788220800000,
+                      "end":  1795996800000,
+                      "lane":  14,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 90d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-016",
+                      "name":  "PCリプレース（2026年レンタル期限満了分）",
+                      "start":  1775001600000,
+                      "end":  1785329169638.9094,
+                      "lane":  15,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 130d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-017",
+                      "name":  "2/1組織変更",
+                      "start":  1768348800000,
+                      "end":  1770940800000,
+                      "lane":  16,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 30d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-018",
+                      "name":  "M365リセラー変更",
+                      "start":  1767571200000,
+                      "end":  1777939200000,
+                      "lane":  17,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#b45309",
+                      "description":  "Section: 藤田; Source: wbs2026.md; Duration: 120d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-019",
+                      "name":  "HR マスターシステム導入",
+                      "start":  1767571200000,
+                      "end":  1777939200000,
+                      "lane":  18,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#be123c",
+                      "description":  "Section: 共通; Source: wbs2026.md; Duration: 120d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-020",
+                      "name":  "IT 棚卸 デバイス",
+                      "start":  1771200000000,
+                      "end":  1772928000000,
+                      "lane":  19,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#be123c",
+                      "description":  "Section: 共通; Source: wbs2026.md; Duration: 20d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-021",
+                      "name":  "IT 棚卸 Software",
+                      "start":  1773619200000,
+                      "end":  1775347200000,
+                      "lane":  20,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#be123c",
+                      "description":  "Section: 共通; Source: wbs2026.md; Duration: 20d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-022",
+                      "name":  "IT 棚卸 外注",
+                      "start":  1776284356626.5059,
+                      "end":  1778012356626.5059,
+                      "lane":  21,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#be123c",
+                      "description":  "Section: 共通; Source: wbs2026.md; Duration: 20d",
+                      "done":  false,
+                      "project":  ""
+                  },
+                  {
+                      "id":  "wbs2026-023",
+                      "name":  "IT Azure VPN 移行",
+                      "start":  1792022400000,
+                      "end":  1797206400000,
+                      "lane":  22,
+                      "dependencies":  [
+
+                                       ],
+                      "color":  "#be123c",
+                      "description":  "Section: 共通; Source: wbs2026.md; Duration: 60d",
+                      "done":  false,
+                      "project":  ""
+                  }
+              ],
+    "zoom":  "year"
 }

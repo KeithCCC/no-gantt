@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import './App.css'
 
 type Task = {
   id: string
   name: string
+  project: string
   start: number
   end: number
   lane: number
@@ -40,6 +41,7 @@ type DragDraft = {
 type TaskEditor = {
   id: string
   name: string
+  project: string
   color: string
   description: string
   startDate: string
@@ -73,6 +75,8 @@ const DB_VERSION = 1
 const STORE_NAME = 'kv'
 const STATE_KEY = 'app-state'
 const PRESET_TASK_COLORS = ['#1d4ed8', '#0f766e', '#b45309', '#be123c', '#4338ca']
+const ALL_PROJECTS_KEY = '__all__'
+const NO_PROJECT_KEY = '__none__'
 
 function startOfDayUtc(ts: number): number {
   const d = new Date(ts)
@@ -111,11 +115,12 @@ function buildTaskName(tasks: Task[]): string {
 }
 
 function normalizeTask(
-  task: Omit<Task, 'color' | 'description' | 'done'> &
-    Partial<Pick<Task, 'color' | 'description' | 'done'>>,
+  task: Omit<Task, 'project' | 'color' | 'description' | 'done'> &
+    Partial<Pick<Task, 'project' | 'color' | 'description' | 'done'>>,
 ): Task {
   return {
     ...task,
+    project: task.project ?? '',
     color: task.color ?? DEFAULT_TASK_COLOR,
     description: task.description ?? '',
     done: task.done ?? false,
@@ -150,6 +155,7 @@ function parseImportedState(raw: unknown): AppState | null {
       normalizeTask({
         id: task.id,
         name: task.name,
+        project: task.project,
         start: task.start,
         end: task.end,
         lane: task.lane,
@@ -222,15 +228,85 @@ function formatDateLabel(ts: number): string {
   return toDateInputValue(ts)
 }
 
+function formatCompactDate(ts: number): string {
+  const d = new Date(ts)
+  const year = d.getUTCFullYear()
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${year}${month}${day}`
+}
+
+function toProjectFilterKey(projectName: string): string {
+  return projectName.trim() === '' ? NO_PROJECT_KEY : projectName.trim()
+}
+
+function tidyTasksByProject(tasks: Task[]): Task[] {
+  if (tasks.length === 0) return tasks
+
+  const groups = new Map<string, Task[]>()
+  for (const task of tasks) {
+    const projectKey = task.project.trim()
+    const existing = groups.get(projectKey)
+    if (existing) {
+      existing.push(task)
+    } else {
+      groups.set(projectKey, [task])
+    }
+  }
+
+  const orderedGroups = Array.from(groups.entries()).sort(([projectA, tasksA], [projectB, tasksB]) => {
+    const earliestA = tasksA.reduce((min, task) => Math.min(min, task.start), Number.POSITIVE_INFINITY)
+    const earliestB = tasksB.reduce((min, task) => Math.min(min, task.start), Number.POSITIVE_INFINITY)
+    if (earliestA !== earliestB) return earliestA - earliestB
+    return projectA.localeCompare(projectB)
+  })
+
+  const tidied: Task[] = []
+  let laneOffset = 0
+
+  for (const [, projectTasks] of orderedGroups) {
+    const sortedTasks = [...projectTasks].sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start
+      if (a.end !== b.end) return a.end - b.end
+      return a.name.localeCompare(b.name)
+    })
+
+    const laneEnds: number[] = []
+    for (const task of sortedTasks) {
+      let laneIndex = laneEnds.findIndex((laneEnd) => laneEnd <= task.start)
+      if (laneIndex === -1) {
+        laneIndex = laneEnds.length
+        laneEnds.push(task.end)
+      } else {
+        laneEnds[laneIndex] = task.end
+      }
+
+      tidied.push({
+        ...task,
+        lane: laneOffset + laneIndex,
+      })
+    }
+
+    laneOffset += Math.max(1, laneEnds.length)
+  }
+
+  return tidied
+}
+
 function App() {
+  const projectOptionsId = useId()
   const timelineScrollRef = useRef<HTMLDivElement | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
+  const projectFilterRef = useRef<HTMLDivElement | null>(null)
   const suppressGridClickRef = useRef(false)
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [zoom, setZoom] = useState<ZoomLevel>('week')
   const [loaded, setLoaded] = useState(false)
   const [yearViewWidth, setYearViewWidth] = useState(0)
+  const [selectedProjectKeys, setSelectedProjectKeys] = useState<string[]>([ALL_PROJECTS_KEY])
+  const [projectFilterOpen, setProjectFilterOpen] = useState(false)
+  const [showTaskTable, setShowTaskTable] = useState(false)
 
   const [resizeDraft, setResizeDraft] = useState<ResizeDraft | null>(null)
   const [linkDraft, setLinkDraft] = useState<LinkDraft | null>(null)
@@ -240,19 +316,50 @@ function App() {
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null)
 
   const [defaultTimelineStart] = useState(() => startOfDayUtc(Date.now() - 7 * DAY_MS))
+  const projectNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          tasks
+            .map((task) => task.project.trim())
+            .filter((projectName) => projectName.length > 0),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [tasks],
+  )
+  const hasBlankProject = useMemo(() => tasks.some((task) => task.project.trim() === ''), [tasks])
+  const projectFilterOptions = useMemo(
+    () => [
+      { key: ALL_PROJECTS_KEY, label: 'All Projects' },
+      ...projectNames.map((projectName) => ({ key: projectName, label: projectName })),
+      ...(hasBlankProject ? [{ key: NO_PROJECT_KEY, label: 'No Project' }] : []),
+    ],
+    [projectNames, hasBlankProject],
+  )
+  const showAllProjects =
+    selectedProjectKeys.length === 0 || selectedProjectKeys.includes(ALL_PROJECTS_KEY)
+  const visibleTasks = useMemo(() => {
+    if (showAllProjects) return tasks
+    const selected = new Set(selectedProjectKeys)
+    return tasks.filter((task) => selected.has(toProjectFilterKey(task.project)))
+  }, [tasks, selectedProjectKeys, showAllProjects])
   const earliestTaskStart = useMemo(
     () =>
-      tasks.length > 0
-        ? startOfDayUtc(tasks.reduce((min, task) => Math.min(min, task.start), Number.POSITIVE_INFINITY))
+      visibleTasks.length > 0
+        ? startOfDayUtc(
+            visibleTasks.reduce((min, task) => Math.min(min, task.start), Number.POSITIVE_INFINITY),
+          )
         : defaultTimelineStart,
-    [tasks, defaultTimelineStart],
+    [visibleTasks, defaultTimelineStart],
   )
   const latestTaskEnd = useMemo(
     () =>
-      tasks.length > 0
-        ? startOfDayUtc(tasks.reduce((max, task) => Math.max(max, task.end), Number.NEGATIVE_INFINITY))
+      visibleTasks.length > 0
+        ? startOfDayUtc(
+            visibleTasks.reduce((max, task) => Math.max(max, task.end), Number.NEGATIVE_INFINITY),
+          )
         : defaultTimelineStart + TIMELINE_DAYS * DAY_MS,
-    [tasks, defaultTimelineStart],
+    [visibleTasks, defaultTimelineStart],
   )
 
   const nonYearTimelineStart = Math.min(
@@ -279,8 +386,8 @@ function App() {
   const timelineWidth = timelineDays * pxPerDay
 
   const laneCount = useMemo(
-    () => Math.max(1, tasks.reduce((maxLane, task) => Math.max(maxLane, task.lane + 1), 1)),
-    [tasks],
+    () => Math.max(1, visibleTasks.reduce((maxLane, task) => Math.max(maxLane, task.lane + 1), 1)),
+    [visibleTasks],
   )
   const renderLaneCount = laneCount + 1
   const timelineHeight = renderLaneCount * LANE_HEIGHT
@@ -330,10 +437,22 @@ function App() {
     void saveState({ tasks, zoom })
   }, [tasks, zoom, loaded])
 
+  useEffect(() => {
+    const onMouseDown = (event: MouseEvent) => {
+      if (!projectFilterRef.current?.contains(event.target as Node)) {
+        setProjectFilterOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', onMouseDown)
+    return () => window.removeEventListener('mousedown', onMouseDown)
+  }, [])
+
   const openTaskEditor = useCallback((task: Task) => {
     setEditor({
       id: task.id,
       name: task.name,
+      project: task.project,
       color: task.color,
       description: task.description,
       startDate: toDateInputValue(task.start),
@@ -445,6 +564,7 @@ function App() {
     const newTask: Task = {
       id: crypto.randomUUID(),
       name: '',
+      project: '',
       start: pendingCreate.start,
       end: pendingCreate.start + DAY_MS,
       lane: 0,
@@ -475,8 +595,63 @@ function App() {
   }
 
   const updateTask = (taskId: string, patch: Partial<Task>) => {
-    setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, ...patch } : task)))
+    setTasks((prev) => {
+      const currentTask = prev.find((task) => task.id === taskId)
+      if (!currentTask) return prev
+
+      const nextProject = (patch.project ?? currentTask.project).trim()
+      const shouldSyncProjectColor = typeof patch.color === 'string' && nextProject.length > 0
+      const inheritedProjectColor =
+        typeof patch.project === 'string' && nextProject.length > 0
+          ? prev.find((task) => task.id !== taskId && task.project.trim() === nextProject)?.color
+          : undefined
+
+      return prev.map((task) => {
+        if (task.id === taskId) {
+          const nextTask = {
+            ...task,
+            ...patch,
+          }
+          return inheritedProjectColor ? { ...nextTask, color: inheritedProjectColor } : nextTask
+        }
+
+        if (shouldSyncProjectColor && task.project.trim() === nextProject) {
+          return { ...task, color: patch.color as string }
+        }
+
+        return task
+      })
+    })
   }
+
+  const tidyBars = useCallback(() => {
+    setTasks((prev) => tidyTasksByProject(prev))
+  }, [])
+
+  const toggleProjectFilter = useCallback((key: string) => {
+    setSelectedProjectKeys((prev) => {
+      if (key === ALL_PROJECTS_KEY) {
+        return [ALL_PROJECTS_KEY]
+      }
+
+      const next = prev.includes(ALL_PROJECTS_KEY) ? [] : [...prev]
+      const index = next.indexOf(key)
+      if (index >= 0) {
+        next.splice(index, 1)
+      } else {
+        next.push(key)
+      }
+
+      return next.length === 0 ? [ALL_PROJECTS_KEY] : next.sort((a, b) => a.localeCompare(b))
+    })
+  }, [])
+
+  const updateTaskField = useCallback(
+    (taskId: string, patch: Partial<Task>) => {
+      updateTask(taskId, patch)
+    },
+    [updateTask],
+  )
 
   const deleteTask = (taskId: string) => {
     setTasks((prev) =>
@@ -496,7 +671,7 @@ function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'no-gantt-state.json'
+    a.download = `no-gantt-state-${formatCompactDate(Date.now())}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -555,9 +730,15 @@ function App() {
   const todayX = useMemo(() => toX(startOfDayUtc(Date.now())), [toX])
   const showTodayLine = todayX >= 0 && todayX <= timelineWidth
   const hoveredTask = useMemo(
-    () => tasks.find((task) => task.id === hoveredTaskId) ?? null,
-    [tasks, hoveredTaskId],
+    () => visibleTasks.find((task) => task.id === hoveredTaskId) ?? null,
+    [visibleTasks, hoveredTaskId],
   )
+  const projectFilterLabel = showAllProjects
+    ? 'All Projects'
+    : projectFilterOptions
+        .filter((option) => selectedProjectKeys.includes(option.key))
+        .map((option) => option.label)
+        .join(', ')
 
   return (
     <div className="app-shell">
@@ -575,6 +756,35 @@ function App() {
           </button>
           <button className={zoom === 'year' ? 'active' : ''} onClick={() => setZoom('year')}>
             Year
+          </button>
+          <div className="project-filter" ref={projectFilterRef}>
+            <button onClick={() => setProjectFilterOpen((prev) => !prev)}>
+              Projects: {projectFilterLabel}
+            </button>
+            {projectFilterOpen && (
+              <div className="project-filter-menu">
+                {projectFilterOptions.map((option) => {
+                  const checked =
+                    option.key === ALL_PROJECTS_KEY
+                      ? showAllProjects
+                      : selectedProjectKeys.includes(option.key)
+                  return (
+                    <label key={option.key} className="project-filter-option">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleProjectFilter(option.key)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <button onClick={tidyBars}>Tidy Bars</button>
+          <button onClick={() => setShowTaskTable((prev) => !prev)}>
+            {showTaskTable ? 'Hide Task Table' : 'Show Task Table'}
           </button>
           <button onClick={() => importInputRef.current?.click()}>Import JSON</button>
           <button onClick={exportJson}>Export JSON</button>
@@ -635,9 +845,9 @@ function App() {
                 <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
               </marker>
             </defs>
-            {tasks.flatMap((task) =>
+            {visibleTasks.flatMap((task) =>
               task.dependencies.map((targetId) => {
-                const target = tasks.find((t) => t.id === targetId)
+                const target = visibleTasks.find((t) => t.id === targetId)
                 if (!target) return null
 
                 const x1 = toX(task.end)
@@ -651,7 +861,7 @@ function App() {
               }),
             )}
             {linkDraft && (() => {
-              const source = tasks.find((task) => task.id === linkDraft.sourceTaskId)
+              const source = visibleTasks.find((task) => task.id === linkDraft.sourceTaskId)
               if (!source) return null
               const x1 = toX(source.end)
               const y1 = source.lane * LANE_HEIGHT + BAR_HEIGHT / 2
@@ -668,15 +878,16 @@ function App() {
           </svg>
 
           <div className="bars-layer" style={{ top: `${HEADER_HEIGHT}px`, height: `${timelineHeight}px` }}>
-            {tasks.map((task) => {
+            {visibleTasks.map((task) => {
               const left = toX(task.start)
               const width = Math.max(8, toX(task.end) - toX(task.start))
               const top = task.lane * LANE_HEIGHT
+              const useFloatingControls = width < 92
 
               return (
                 <div
                   key={task.id}
-                  className={`task-bar ${task.done ? 'done' : ''}`}
+                  className={`task-bar ${task.done ? 'done' : ''} ${useFloatingControls ? 'compact' : ''}`}
                   style={{
                     left: `${left}px`,
                     top: `${top}px`,
@@ -710,47 +921,65 @@ function App() {
                     if (linkDraft) updateDependency(linkDraft.sourceTaskId, task.id)
                   }}
                 >
-                  <button
-                    className="resize-handle left"
-                    onMouseDown={(event) => {
-                      event.stopPropagation()
-                      setResizeDraft({ taskId: task.id, edge: 'start' })
-                    }}
-                    aria-label={`Resize start ${task.name}`}
-                  />
-                  <span>{task.name}</span>
-                  <button
-                    className="link-handle"
-                    onMouseDown={(event) => {
-                      event.stopPropagation()
-                      const bounds = timelineRef.current?.getBoundingClientRect()
-                      const x = bounds ? Math.max(0, Math.min(timelineWidth, event.clientX - bounds.left)) : 0
-                      const y = bounds
-                        ? Math.max(0, Math.min(HEADER_HEIGHT + timelineHeight, event.clientY - bounds.top))
-                        : 0
-                      setLinkDraft({ sourceTaskId: task.id, x, y })
-                    }}
-                    aria-label={`Link from ${task.name}`}
-                  />
-                  <button
-                    className="detail-handle"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      openTaskEditor(task)
-                    }}
-                    aria-label={`Open details for ${task.name}`}
-                    title="Task details"
+                  {!useFloatingControls && (
+                    <button
+                      className="resize-handle left"
+                      onMouseDown={(event) => {
+                        event.stopPropagation()
+                        setResizeDraft({ taskId: task.id, edge: 'start' })
+                      }}
+                      aria-label={`Resize start ${task.name}`}
+                    />
+                  )}
+                  <span className="task-label">{task.name}</span>
+                  <div
+                    className={`task-controls ${useFloatingControls ? 'floating' : ''} ${
+                      useFloatingControls && task.lane === 0 ? 'floating-below' : ''
+                    }`}
                   >
-                    i
-                  </button>
-                  <button
-                    className="resize-handle right"
-                    onMouseDown={(event) => {
-                      event.stopPropagation()
-                      setResizeDraft({ taskId: task.id, edge: 'end' })
-                    }}
-                    aria-label={`Resize end ${task.name}`}
-                  />
+                    {useFloatingControls && (
+                      <button
+                        className="resize-handle left"
+                        onMouseDown={(event) => {
+                          event.stopPropagation()
+                          setResizeDraft({ taskId: task.id, edge: 'start' })
+                        }}
+                        aria-label={`Resize start ${task.name}`}
+                      />
+                    )}
+                    <button
+                      className="link-handle"
+                      onMouseDown={(event) => {
+                        event.stopPropagation()
+                        const bounds = timelineRef.current?.getBoundingClientRect()
+                        const x = bounds ? Math.max(0, Math.min(timelineWidth, event.clientX - bounds.left)) : 0
+                        const y = bounds
+                          ? Math.max(0, Math.min(HEADER_HEIGHT + timelineHeight, event.clientY - bounds.top))
+                          : 0
+                        setLinkDraft({ sourceTaskId: task.id, x, y })
+                      }}
+                      aria-label={`Link from ${task.name}`}
+                    />
+                    <button
+                      className="detail-handle"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openTaskEditor(task)
+                      }}
+                      aria-label={`Open details for ${task.name}`}
+                      title="Task details"
+                    >
+                      i
+                    </button>
+                    <button
+                      className="resize-handle right"
+                      onMouseDown={(event) => {
+                        event.stopPropagation()
+                        setResizeDraft({ taskId: task.id, edge: 'end' })
+                      }}
+                      aria-label={`Resize end ${task.name}`}
+                    />
+                  </div>
                 </div>
               )
             })}
@@ -762,6 +991,7 @@ function App() {
         {hoveredTask ? (
           <>
             <strong>{hoveredTask.name}</strong>
+            <span>Project: {hoveredTask.project || '-'}</span>
             <span>Status: {hoveredTask.done ? 'Done' : 'Active'}</span>
             <span>Start: {formatDateLabel(hoveredTask.start)}</span>
             <span>End: {formatDateLabel(hoveredTask.end - 1)}</span>
@@ -769,12 +999,97 @@ function App() {
         ) : (
           <>
             <strong>No task hovered</strong>
+            <span>Project: -</span>
             <span>Status: -</span>
             <span>Start: -</span>
             <span>End: -</span>
           </>
         )}
       </div>
+
+      {showTaskTable && (
+        <section className="task-table-panel">
+          <div className="task-table-header">
+            <h2>Filtered Task Editor</h2>
+            <span>{visibleTasks.length} task(s)</span>
+          </div>
+          <div className="task-table-scroll">
+            <table className="task-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Done</th>
+                  <th>Color</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTasks.map((task) => (
+                  <tr key={task.id}>
+                    <td>
+                      <input
+                        value={task.name}
+                        onChange={(event) => updateTaskField(task.id, { name: event.target.value })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        value={task.description}
+                        onChange={(event) =>
+                          updateTaskField(task.id, { description: event.target.value })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        value={toDateInputValue(task.start)}
+                        onChange={(event) => {
+                          const nextStart = fromDateInputValue(event.target.value)
+                          if (nextStart === null) return
+                          updateTaskField(task.id, {
+                            start: nextStart,
+                            end: Math.max(task.end, nextStart + MIN_TASK_MS),
+                          })
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        value={toDateInputValue(task.end - 1)}
+                        onChange={(event) => {
+                          const nextEnd = fromDateInputValue(event.target.value)
+                          if (nextEnd === null) return
+                          updateTaskField(task.id, {
+                            end: Math.max(nextEnd + DAY_MS, task.start + MIN_TASK_MS),
+                          })
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={task.done}
+                        onChange={(event) => updateTaskField(task.id, { done: event.target.checked })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="color"
+                        value={task.color}
+                        onChange={(event) => updateTaskField(task.id, { color: event.target.value })}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <p className="note">
         POC controls: click blank lane space to create (with confirmation), drag bar body to move lane/time, drag bar
@@ -829,6 +1144,33 @@ function App() {
                   setEditor((prev) => (prev ? { ...prev, name: event.target.value } : prev))
                 }
               />
+            </label>
+            <label>
+              <span>Project</span>
+              <input
+                list={projectOptionsId}
+                value={editor.project}
+                placeholder="Select existing or type a new project"
+                onChange={(event) =>
+                  setEditor((prev) => (prev ? { ...prev, project: event.target.value } : prev))
+                }
+              />
+              {editor.project.trim() === '' && projectNames.length > 0 && (
+                <div className="project-suggestions">
+                  {projectNames.map((projectName) => (
+                    <button
+                      key={projectName}
+                      type="button"
+                      className="project-chip"
+                      onClick={() =>
+                        setEditor((prev) => (prev ? { ...prev, project: projectName } : prev))
+                      }
+                    >
+                      {projectName}
+                    </button>
+                  ))}
+                </div>
+              )}
             </label>
             <label>
               <span>Color</span>
@@ -896,6 +1238,7 @@ function App() {
 
                   updateTask(editor.id, {
                     name: editor.name.trim() || 'Untitled Task',
+                    project: editor.project.trim(),
                     color: editor.color,
                     description: editor.description,
                     start: startTs,
@@ -911,6 +1254,12 @@ function App() {
           </div>
         </div>
       )}
+
+      <datalist id={projectOptionsId}>
+        {projectNames.map((projectName) => (
+          <option key={projectName} value={projectName} />
+        ))}
+      </datalist>
     </div>
   )
 }
