@@ -343,6 +343,14 @@ function App() {
     const selected = new Set(selectedProjectKeys)
     return tasks.filter((task) => selected.has(toProjectFilterKey(task.project)))
   }, [tasks, selectedProjectKeys, showAllProjects])
+  const displayedTasks = useMemo(() => {
+    const lanes = Array.from(new Set(visibleTasks.map((task) => task.lane))).sort((a, b) => a - b)
+    const laneMap = new Map(lanes.map((lane, index) => [lane, index]))
+    return visibleTasks.map((task) => ({
+      ...task,
+      lane: laneMap.get(task.lane) ?? 0,
+    }))
+  }, [visibleTasks])
   const earliestTaskStart = useMemo(
     () =>
       visibleTasks.length > 0
@@ -386,8 +394,8 @@ function App() {
   const timelineWidth = timelineDays * pxPerDay
 
   const laneCount = useMemo(
-    () => Math.max(1, visibleTasks.reduce((maxLane, task) => Math.max(maxLane, task.lane + 1), 1)),
-    [visibleTasks],
+    () => Math.max(1, displayedTasks.reduce((maxLane, task) => Math.max(maxLane, task.lane + 1), 1)),
+    [displayedTasks],
   )
   const renderLaneCount = laneCount + 1
   const timelineHeight = renderLaneCount * LANE_HEIGHT
@@ -730,8 +738,8 @@ function App() {
   const todayX = useMemo(() => toX(startOfDayUtc(Date.now())), [toX])
   const showTodayLine = todayX >= 0 && todayX <= timelineWidth
   const hoveredTask = useMemo(
-    () => visibleTasks.find((task) => task.id === hoveredTaskId) ?? null,
-    [visibleTasks, hoveredTaskId],
+    () => displayedTasks.find((task) => task.id === hoveredTaskId) ?? null,
+    [displayedTasks, hoveredTaskId],
   )
   const projectFilterLabel = showAllProjects
     ? 'All Projects'
@@ -845,9 +853,9 @@ function App() {
                 <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
               </marker>
             </defs>
-            {visibleTasks.flatMap((task) =>
+            {displayedTasks.flatMap((task) =>
               task.dependencies.map((targetId) => {
-                const target = visibleTasks.find((t) => t.id === targetId)
+                const target = displayedTasks.find((t) => t.id === targetId)
                 if (!target) return null
 
                 const x1 = toX(task.end)
@@ -861,7 +869,7 @@ function App() {
               }),
             )}
             {linkDraft && (() => {
-              const source = visibleTasks.find((task) => task.id === linkDraft.sourceTaskId)
+              const source = displayedTasks.find((task) => task.id === linkDraft.sourceTaskId)
               if (!source) return null
               const x1 = toX(source.end)
               const y1 = source.lane * LANE_HEIGHT + BAR_HEIGHT / 2
@@ -878,7 +886,7 @@ function App() {
           </svg>
 
           <div className="bars-layer" style={{ top: `${HEADER_HEIGHT}px`, height: `${timelineHeight}px` }}>
-            {visibleTasks.map((task) => {
+            {displayedTasks.map((task) => {
               const left = toX(task.start)
               const width = Math.max(8, toX(task.end) - toX(task.start))
               const top = task.lane * LANE_HEIGHT
