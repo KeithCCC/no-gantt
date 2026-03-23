@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import './App.css'
 
 type Task = {
@@ -234,6 +235,10 @@ function formatCompactDate(ts: number): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, '0')
   const day = String(d.getUTCDate()).padStart(2, '0')
   return `${year}${month}${day}`
+}
+
+function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 }
 
 function toProjectFilterKey(projectName: string): string {
@@ -675,11 +680,23 @@ function App() {
 
   const exportJson = () => {
     const payload = JSON.stringify({ tasks, zoom }, null, 2)
+    const fileName = `no-gantt-state-${formatCompactDate(Date.now())}.json`
+
+    if (isTauriRuntime()) {
+      void invoke<boolean>('save_json_export', {
+        defaultFileName: fileName,
+        contents: payload,
+      }).catch(() => {
+        window.alert('Failed to export JSON file.')
+      })
+      return
+    }
+
     const blob = new Blob([payload], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `no-gantt-state-${formatCompactDate(Date.now())}.json`
+    a.download = fileName
     a.click()
     URL.revokeObjectURL(url)
   }

@@ -1,0 +1,15 @@
+"$schema" = "schemas/schema.json"
+
+[[permission]]
+identifier = "allow-healthcheck"
+description = "Enables the healthcheck command."
+commands.allow = ["healthcheck"]
+
+[[permission]]
+identifier = "allow-save-json-export"
+description = "Enables the save_json_export command."
+commands.allow = ["save_json_export"]
+
+[default]
+description = "Default permissions for NoGantt application commands."
+permissions = ["allow-healthcheck", "allow-save-json-export"]
